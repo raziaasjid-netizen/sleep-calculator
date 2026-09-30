@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleep Calculator - Bedtime, Wake Up & Nap Calculator</title>
+<meta name="description" content="Free sleep calculator to find recommended bedtimes, wake-up times, sleep duration, nap times and sleep debt estimates.">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#07111f;--card:#0e1c31;--card2:#12243d;--text:#f5f7fb;--muted:#aab7ca;--accent:#7c5cff;--accent2:#2dd4bf;--border:#233754;--danger:#fb7185}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at 20% 0%,#172b52 0,#07111f 38%,#050b14 100%);color:var(--text);min-height:100vh}
+.container{width:min(1100px,92%);margin:auto}
+header{text-align:center;padding:48px 0 28px}
+.logo{font-size:48px;margin-bottom:8px}
+h1{margin:0;font-size:clamp(30px,5vw,50px);letter-spacing:-1px}
+.subtitle{color:var(--muted);margin:10px auto 0;max-width:680px;line-height:1.6}
+.tabs{display:flex;gap:8px;overflow:auto;padding:8px;margin-bottom:18px;background:rgba(14,28,49,.8);border:1px solid var(--border);border-radius:16px}
+.tab{border:0;background:transparent;color:var(--muted);padding:12px 17px;border-radius:11px;cursor:pointer;font-weight:700;white-space:nowrap}
+.tab.active{background:var(--accent);color:white}
+.panel{display:none;background:rgba(14,28,49,.94);border:1px solid var(--border);border-radius:22px;padding:26px;box-shadow:0 18px 60px rgba(0,0,0,.2)}
+.panel.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.field label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+input,select{width:100%;padding:13px 14px;background:#091628;color:var(--text);border:1px solid var(--border);border-radius:11px;font-size:16px;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+button.primary{margin-top:18px;width:100%;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,var(--accent),#9b7cff);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+button.primary:hover{filter:brightness(1.08)}
+.result{margin-top:22px}
+.result h2{font-size:21px;margin:0 0 12px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.result-card{background:var(--card2);border:1px solid var(--border);border-radius:15px;padding:16px;text-align:center}
+.result-card.best{border-color:var(--accent2);box-shadow:0 0 0 1px rgba(45,212,191,.2)}
+.result-card .tag{font-size:11px;color:var(--accent2);font-weight:900;text-transform:uppercase}
+.result-card .time{font-size:25px;font-weight:900;margin:8px 0}
+.result-card small{color:var(--muted)}
+.note{color:var(--muted);font-size:13px;line-height:1.55;margin-top:14px}
+.error{color:#fecdd3;background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.3);padding:12px;border-radius:10px;margin-top:14px}
+.info{color:#d9e2f2;background:rgba(124,92,255,.08);border:1px solid rgba(124,92,255,.25);padding:13px;border-radius:11px;line-height:1.5}
+footer{text-align:center;color:var(--muted);padding:35px 0 50px;font-size:13px}
+@media(max-width:700px){.grid,.cards{grid-template-columns:1fr}.panel{padding:18px}.tabs{border-radius:12px}header{padding-top:32px}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="logo">🌙</div>
+<h1>Sleep Calculator</h1>
+<p class="subtitle">Find practical bedtime, wake-up, nap and sleep-duration estimates in seconds.</p>
+</header>
+
+<nav class="tabs" aria-label="Sleep calculator tools">
+<button class="tab active" data-tab="wake">Wake Up → Bedtime</button>
+<button class="tab" data-tab="bed">Bedtime → Wake Up</button>
+<button class="tab" data-tab="now">Sleep Now</button>
+<button class="tab" data-tab="nap">Nap Calculator</button>
+<button class="tab" data-tab="duration">Sleep Duration</button>
+<button class="tab" data-tab="debt">Sleep Debt</button>
+</nav>
+
+<section id="wake" class="panel active">
+<h2>⏰ I want to wake up at</h2>
+<div class="grid">
+<div class="field"><label for="wakeTime">Wake-up time</label><input id="wakeTime" type="time" value="07:00"></div>
+<div class="field"><label for="wakeFall">Time to fall asleep</label><select id="wakeFall"><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option></select></div>
+</div>
+<button class="primary" onclick="calcWake()">Calculate Bedtimes</button>
+<div id="wakeResult" class="result"></div>
+</section>
+
+<section id="bed" class="panel">
+<h2>🛏️ I want to go to bed at</h2>
+<div class="grid">
+<div class="field"><label for="bedTime">Bedtime</label><input id="bedTime" type="time" value="22:30"></div>
+<div class="field"><label for="bedFall">Time to fall asleep</label><select id="bedFall"><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option></select></div>
+</div>
+<button class="primary" onclick="calcBed()">Calculate Wake-up Times</button>
+<div id="bedResult" class="result"></div>
+</section>
+
+<section id="now" class="panel">
+<h2>🌙 Sleep Now</h2>
+<p class="info">Uses your computer's current local time. The times below are planning estimates based on sleep-cycle durations.</p>
+<div class="grid">
+<div class="field"><label for="nowFall">Time to fall asleep</label><select id="nowFall"><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option></select></div>
+</div>
+<button class="primary" onclick="calcNow()">Calculate Wake-up Times</button>
+<div id="nowResult" class="result"></div>
+</section>
+
+<section id="nap" class="panel">
+<h2>😴 Nap Calculator</h2>
+<div class="grid">
+<div class="field"><label for="napStart">Nap start time</label><input id="napStart" type="time" value="14:00"></div>
+<div class="field"><label for="napLength">Nap length</label><select id="napLength"><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option><option value="90">90 minutes</option></select></div>
+</div>
+<button class="primary" onclick="calcNap()">Calculate Nap End</button>
+<div id="napResult" class="result"></div>
+</section>
+
+<section id="duration" class="panel">
+<h2>📊 Sleep Duration Calculator</h2>
+<div class="grid">
+<div class="field"><label for="durationBed">Bedtime</label><input id="durationBed" type="time" value="22:30"></div>
+<div class="field"><label for="durationWake">Wake-up time</label><input id="durationWake" type="time" value="07:00"></div>
+</div>
+<button class="primary" onclick="calcDuration()">Calculate Sleep Duration</button>
+<div id="durationResult" class="result"></div>
+</section>
+
+<section id="debt" class="panel">
+<h2>🧮 Sleep Debt Calculator</h2>
+<p class="note">Enter the amount of sleep you actually got each night. Sleep debt is an estimate compared with your selected target.</p>
+<div class="grid">
+<div class="field"><label for="target">Target sleep per night</label><select id="target"><option value="7">7 hours</option><option value="8" selected>8 hours</option><option value="9">9 hours</option></select></div>
+<div class="field"><label for="nights">Number of nights</label><select id="nights"></select></div>
+</div>
+<div id="nightInputs" class="grid" style="margin-top:18px"></div>
+<button class="primary" onclick="calcDebt()">Calculate Sleep Debt</button>
+<div id="debtResult" class="result"></div>
+</section>
+
+<footer>
+Sleep-cycle times are estimates, not medical advice. Individual sleep needs and sleep cycles vary.
+</footer>
+</div>
+
+<script>
+const tabs=document.querySelectorAll('.tab'), panels=document.querySelectorAll('.panel');
+tabs.forEach(t=>t.addEventListener('click',()=>{
+ tabs.forEach(x=>x.classList.remove('active')); panels.forEach(x=>x.classList.remove('active'));
+ t.classList.add('active'); document.getElementById(t.dataset.tab).classList.add('active');
+ if(t.dataset.tab==='debt') buildNightInputs();
+}));
+const CYCLE=90;
+function parseTime(v){const [h,m]=v.split(':').map(Number);return h*60+m}
+function fmt(mins){mins=((mins%1440)+1440)%1440;let h=Math.floor(mins/60),m=mins%60;let ap=h>=12?'PM':'AM';let hh=h%12||12;return `${String(hh).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ap}`}
+function cards(times,type){
+ return `<h2>${type}</h2><div class="cards">${times.map((x,i)=>`<div class="result-card ${i===times.length-1?'best':''}">${i===times.length-1?'<div class="tag">Longer sleep option</div>':''}<div class="time">${x.time}</div><small>${x.label}</small></div>`).join('')}</div><p class="note">Planning estimate: a sleep cycle is often approximated at about 90 minutes, but real cycles vary. Most adults generally need 7–9 hours of sleep.</p>`
+}
+function calcWake(){
+ const w=parseTime(document.getElementById('wakeTime').value), fall=+document.getElementById('wakeFall').value;
+ const cycles=[4,5,6].map(c=>({time:fmt(w-fall-c*CYCLE),label:`${c} cycles • ${c*1.5} hours`}));
+ document.getElementById('wakeResult').innerHTML=cards(cycles,'Recommended bedtimes');
+}
+function calcBed(){
+ const b=parseTime(document.getElementById('bedTime').value), fall=+document.getElementById('bedFall').value;
+ const cycles=[4,5,6].map(c=>({time:fmt(b+fall+c*CYCLE),label:`${c} cycles • ${c*1.5} hours`}));
+ document.getElementById('bedResult').innerHTML=cards(cycles,'Recommended wake-up times');
+}
+function calcNow(){
+ const now=new Date(), base=now.getHours()*60+now.getMinutes(), fall=+document.getElementById('nowFall').value;
+ const cycles=[4,5,6].map(c=>({time:fmt(base+fall+c*CYCLE),label:`${c} cycles • ${c*1.5} hours`}));
+ document.getElementById('nowResult').innerHTML=cards(cycles,'Wake-up options');
+}
+function calcNap(){
+ const s=parseTime(document.getElementById('napStart').value), l=+document.getElementById('napLength').value;
+ document.getElementById('napResult').innerHTML=`<div class="result-card"><div class="tag">Nap ends</div><div class="time">${fmt(s+l)}</div><small>${l} minutes</small></div><p class="note">Short naps are often easier to wake from. Longer naps can include deeper sleep and may cause temporary grogginess.</p>`;
+}
+function calcDuration(){
+ const b=parseTime(document.getElementById('durationBed').value),w=parseTime(document.getElementById('durationWake').value);
+ let d=w-b;if(d<=0)d+=1440;
+ const h=Math.floor(d/60),m=d%60;
+ document.getElementById('durationResult').innerHTML=`<div class="result-card"><div class="tag">Estimated time in bed</div><div class="time">${h}h ${m}m</div><small>${d} minutes total</small></div><p class="note">This measures time between the two times; actual sleep may be shorter if you take time to fall asleep or wake during the night.</p>`;
+}
+function buildNightInputs(){
+ const n=+document.getElementById('nights').value||7, box=document.getElementById('nightInputs');
+ box.innerHTML=Array.from({length:n},(_,i)=>`<div class="field"><label>Night ${i+1}</label><input class="sleepNight" type="number" min="0" max="24" step="0.25" value="8" aria-label="Sleep hours night ${i+1}"></div>`).join('');
+}
+for(let i=1;i<=14;i++){let o=document.createElement('option');o.value=i;o.textContent=i+(i===1?' night':' nights');if(i===7)o.selected=true;document.getElementById('nights').appendChild(o)}
+document.getElementById('nights').addEventListener('change',buildNightInputs);buildNightInputs();
+function calcDebt(){
+ const target=+document.getElementById('target').value;
+ const vals=[...document.querySelectorAll('.sleepNight')].map(x=>Math.max(0,+x.value||0));
+ const debt=vals.reduce((s,v)=>s+Math.max(0,target-v),0);
+ const extra=vals.reduce((s,v)=>s+Math.max(0,v-target),0);
+ document.getElementById('debtResult').innerHTML=`<div class="cards"><div class="result-card"><div class="tag">Estimated sleep debt</div><div class="time">${debt.toFixed(2)}h</div><small>below ${target}h/night target</small></div><div class="result-card"><div class="tag">Average sleep</div><div class="time">${(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)}h</div><small>per night</small></div><div class="result-card"><div class="tag">Above target</div><div class="time">${extra.toFixed(2)}h</div><small>extra sleep total</small></div></div><p class="note">Sleep debt is a simple planning estimate, not a clinical diagnosis. Consistently poor sleep or severe daytime sleepiness is worth discussing with a healthcare professional.</p>`;
+}
+</script>
+</body>
+</html>
